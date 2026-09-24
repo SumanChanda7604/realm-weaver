@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Realm Weaver - Fantasy RPG Assistant</title>
+<!-- Google Fonts & Material Symbols -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+
+<style>
+  /* --- Base Design Tokens & Theme Palettes --- */
+  :root {
+    --accent: #7c3aed;
+    --accent-glow: rgba(124, 58, 237, 0.35);
+    --bg: #0f172a;
+    --chat-bg: #1e293b;
+    --card-bg: rgba(30, 41, 59, 0.85);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border: #334155;
+    --header-bg: linear-gradient(135deg, #4c1d95, #7c3aed);
+    --user-bubble-bg: linear-gradient(135deg, #6d28d9, #7c3aed);
+    --particle-color: rgba(139, 92, 246, 0.6);
+    --agent-avatar: "📜";
+    --user-avatar: "⚔️";
+  }
+
+  body.theme-titan {
+    --accent: #8b5cf6;
+    --accent-glow: rgba(139, 92, 246, 0.35);
+    --bg: #0f172a;
+    --chat-bg: #1e293b;
+    --card-bg: rgba(30, 41, 59, 0.85);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border: #334155;
+    --header-bg: linear-gradient(135deg, #4c1d95, #7c3aed);
+    --user-bubble-bg: linear-gradient(135deg, #6d28d9, #8b5cf6);
+    --particle-color: rgba(139, 92, 246, 0.6);
+    --agent-avatar: "🛡️";
+  }
+
+  body.theme-dragon {
+    --accent: #ef4444;
+    --accent-glow: rgba(239, 68, 68, 0.4);
+    --bg: #180808;
+    --chat-bg: #270f0f;
+    --card-bg: rgba(39, 15, 15, 0.85);
+    --text-primary: #fef2f2;
+    --text-secondary: #fca5a5;
+    --border: #451a1a;
+    --header-bg: linear-gradient(135deg, #7f1d1d, #dc2626);
+    --user-bubble-bg: linear-gradient(135deg, #991b1b, #ef4444);
+    --particle-color: rgba(239, 68, 68, 0.6);
+    --agent-avatar: "🐉";
+  }
+
+  body.theme-phoenix {
+    --accent: #f59e0b;
+    --accent-glow: rgba(245, 158, 11, 0.4);
+    --bg: #1a1205;
+    --chat-bg: #2d1f08;
+    --card-bg: rgba(45, 31, 8, 0.85);
+    --text-primary: #fffbeb;
+    --text-secondary: #fde68a;
+    --border: #45300c;
+    --header-bg: linear-gradient(135deg, #78350f, #d97706);
+    --user-bubble-bg: linear-gradient(135deg, #92400e, #f59e0b);
+    --particle-color: rgba(245, 158, 11, 0.6);
+    --agent-avatar: "🔥";
+  }
+
+  body.theme-shadow {
+    --accent: #10b981;
+    --accent-glow: rgba(16, 185, 129, 0.4);
+    --bg: #061412;
+    --chat-bg: #0b2521;
+    --card-bg: rgba(11, 37, 33, 0.85);
+    --text-primary: #ecfdf5;
+    --text-secondary: #6ee7b7;
+    --border: #134e4a;
+    --header-bg: linear-gradient(135deg, #064e3b, #059669);
+    --user-bubble-bg: linear-gradient(135deg, #047857, #10b981);
+    --particle-color: rgba(16, 185, 129, 0.6);
+    --agent-avatar: "👻";
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  /* --- Canvas Particle Backdrop --- */
+  #bg-canvas {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.45;
+  }
+
+  /* --- Toast Notifications --- */
+  #toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1.5rem;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--card-bg);
+    border: 1px solid var(--accent);
+    color: var(--text-primary);
+    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px var(--accent-glow);
+    backdrop-filter: blur(10px);
+    animation: slideInRight 0.3s ease-out forwards;
+  }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* --- Header & Action Controls --- */
+  header {
+    background: var(--header-bg);
+    color: #fff;
+    padding: 0.6rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    flex-shrink: 0;
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .header-brand h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.8px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    white-space: nowrap;
+  }
+  .header-brand .subtitle {
+    font-size: 0.72rem;
+    opacity: 0.85;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .action-btn {
+    background: rgba(0,0,0,0.3);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 0.35rem 0.65rem;
+    border-radius: 18px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+    white-space: nowrap;
+  }
+  .action-btn:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255,255,255,0.25);
+  }
+
+  .theme-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(0,0,0,0.25);
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .theme-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.2rem 0.35rem;
+    border-radius: 50%;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+  .theme-btn:hover {
+    transform: scale(1.2);
+    background: rgba(255,255,255,0.2);
+  }
+  .theme-btn.active {
+    background: rgba(255,255,255,0.3);
+    box-shadow: 0 0 8px rgba(255,255,255,0.4);
+  }
+
+  /* --- Dynamic Player Status Bar Widget --- */
+  .player-status-bar {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.4rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    z-index: 9;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+  .status-group {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+  }
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 500;
+  }
+  .meter-bar {
+    width: 65px;
+    height: 7px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    display: inline-block;
+    position: relative;
+  }
+  .meter-fill-hp {
+    height: 100%;
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+    transition: width 0.4s ease;
+  }
+  .meter-fill-mp {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    transition: width 0.4s ease;
+  }
+  
+  .quest-badge {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.18rem 0.45rem;
+    border-radius: 12px;
+    font-size: 0.73rem;
+    font-weight: 600;
+  }
+
+  /* --- Main Dialogue Log Area --- */
+  #log {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem 1.25rem;
+    max-width: 850px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    z-index: 5;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* --- Custom Dialogue Item Layout --- */
+  .msg-wrapper {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    animation: fadeInUp 0.3s ease-out forwards;
+  }
+  .msg-wrapper.user {
+    flex-direction: row-reverse;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    box-shadow: 0 2px 10px var(--accent-glow);
+    flex-shrink: 0;
+  }
+
+  .bubble-container {
+    max-width: 85%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    position: relative;
+  }
+  .msg-wrapper.user .bubble-container {
+    align-items: flex-end;
+  }
+
+  .sender-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .sender-name {
+    font-size: 0.73rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .bubble {
+    padding: 0.75rem 1.05rem;
+    border-radius: 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    line-height: 1.45;
+    font-size: 0.92rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    white-space: pre-wrap;
+    word-break: break-word;
+    backdrop-filter: blur(8px);
+    position: relative;
+  }
+
+  .msg-wrapper.user .bubble {
+    background: var(--user-bubble-bg);
+    color: #ffffff;
+    border: none;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+  .msg-wrapper.agent .bubble {
+    border-bottom-left-radius: 4px;
+  }
+
+  .bubble.rich {
+    background: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+    white-space: normal;
+    width: 100%;
+  }
+
+  .copy-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+  }
+  .copy-btn:hover {
+    opacity: 1;
+    color: var(--accent);
+  }
+
+  /* --- Animated Loading State --- */
+  .loading-bubble {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1.1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+  .dot-pulse {
+    display: flex;
+    gap: 0.3rem;
+  }
+  .dot-pulse span {
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.2s infinite ease-in-out;
+  }
+  .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(0.6); opacity: 0.4; }
+    50% { transform: scale(1.1); opacity: 1; }
+  }
+
+  /* --- Contextual Guided Action Bar --- */
+  .actions-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    padding: 0.5rem 1rem 0.25rem;
+    z-index: 5;
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 850px;
+    margin: 0 auto;
+  }
+  .quick-actions-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  .prompts-container {
+    display: flex;
+    gap: 0.45rem;
+    overflow-x: auto;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    padding-bottom: 0.3rem;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  .prompt-chip {
+    background: rgba(124, 58, 237, 0.12);
+    color: var(--text-primary);
+    border: 1px solid var(--accent);
+    border-radius: 18px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .prompt-chip:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+
+  /* --- Chat Input Bar (Fully Anchored & Responsive) --- */
+  form#form {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem 0.9rem;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.25);
+    z-index: 10;
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 850px;
+    margin: 0 auto;
+  }
+  input#input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+  }
+  input#input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  input#input::placeholder {
+    color: var(--text-secondary);
+  }
+
+  button.send-btn {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: 12px;
+    background: var(--user-bubble-bg);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+  button.send-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--accent-glow);
+  }
+  button.send-btn:active {
+    transform: translateY(0);
+  }
+
+  /* --- Mobile & Zoom Responsive Tweaks --- */
+  @media (max-width: 768px) {
+    header {
+      padding: 0.5rem 0.85rem;
+    }
+    .header-brand h1 { font-size: 1.1rem; }
+    .header-brand .subtitle { display: none; }
+    .action-btn span { font-size: 0.75rem; }
+    .action-btn { padding: 0.3rem 0.5rem; }
+    
+    .player-status-bar {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+    }
+    .meter-bar { width: 50px; height: 6px; }
+    .status-group { gap: 0.5rem; }
+    
+    #log {
+      padding: 0.75rem 0.85rem;
+    }
+    .bubble-container { max-width: 90%; }
+    .bubble { font-size: 0.88rem; padding: 0.65rem 0.9rem; }
+    
+    .actions-wrapper { padding: 0.4rem 0.6rem 0.2rem; }
+    form#form { padding: 0.65rem 0.85rem 0.75rem; gap: 0.4rem; }
+    input#input { padding: 0.65rem 0.85rem; font-size: 0.88rem; }
+    button.send-btn { padding: 0.65rem 0.9rem; font-size: 0.88rem; }
+  }
+
+  @media (max-width: 480px) {
+    .header-actions .action-btn span { display: none; }
+    .header-actions .action-btn::after { content: attr(title); font-size: 0.75rem; }
+    .theme-selector { padding: 0.15rem 0.35rem; }
+    .theme-btn { font-size: 0.9rem; padding: 0.15rem; }
+  }
+
+  /* --- Registration & Onboarding Modal --- */
+  .reg-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 250;
+    animation: fadeIn 0.3s ease-out;
+    padding: 1rem;
+  }
+  .reg-modal-card {
+    background: var(--card-bg);
+    border: 2px solid var(--accent);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.75rem;
+    box-shadow: 0 12px 40px var(--accent-glow);
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    color: var(--text-primary);
+  }
+  .reg-modal-card h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--accent);
+    text-align: center;
+  }
+  .reg-modal-card p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin: 0 0 0.4rem;
+  }
+
+  .reg-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .reg-input-group label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .reg-input-group input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.4);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+  }
+
+  .clan-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+  .clan-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .clan-card:hover, .clan-card.selected {
+    border-color: var(--accent);
+    background: rgba(124, 58, 237, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px var(--accent-glow);
+  }
+  .clan-card .clan-card-head {
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .clan-card p {
+    font-size: 0.72rem;
+    text-align: left;
+    margin: 0;
+    opacity: 0.8;
+  }
+
+  .start-quest-btn {
+    padding: 0.85rem;
+    border: none;
+    border-radius: 14px;
+    background: var(--user-bubble-bg);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px var(--accent-glow);
+    transition: all 0.2s ease;
+  }
+  .start-quest-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px var(--accent-glow);
+  }
+
+  /* --- World Map & Accomplished Missions Modal --- */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    animation: fadeIn 0.2s ease-out;
+    padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-content {
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 720px;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 1.4rem;
+    box-shadow: 0 10px 30px var(--accent-glow);
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.65rem;
+  }
+  .modal-header h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.3rem;
+    margin: 0;
+    color: var(--accent);
+  }
+  .close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.4rem;
+    cursor: pointer;
+  }
+  .close-btn:hover { color: #fff; }
+
+  /* Map Locations Grid */
+  .map-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.65rem;
+  }
+  .map-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    transition: all 0.2s ease;
+  }
+  .map-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .map-card .loc-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .map-card .loc-status {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.18rem 0.45rem;
+    border-radius: 10px;
+    width: fit-content;
+  }
+  .status-completed { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+  .status-active { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+  .status-locked { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+
+  /* Accomplished Missions List */
+  .missions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .mission-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    padding: 0.55rem 0.85rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* --- Guided Prompts Popover Drawer --- */
+  .guided-popover {
+    position: absolute;
+    top: 3.5rem;
+    right: 1.25rem;
+    background: var(--card-bg);
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    padding: 1rem;
+    width: 310px;
+    max-width: 90vw;
+    box-shadow: 0 10px 25px var(--accent-glow);
+    z-index: 150;
+    display: none;
+    flex-direction: column;
+    gap: 0.65rem;
+    backdrop-filter: blur(12px);
+    animation: fadeInUp 0.2s ease-out;
+  }
+  .guided-popover.open { display: flex; }
+  .guided-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .guided-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.65rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .guided-card:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .guided-card h4 { margin: 0 0 0.2rem; font-size: 0.85rem; }
+  .guided-card p { margin: 0; font-size: 0.75rem; opacity: 0.85; }
+
+  /* --- A2UI Mini-Renderer Styling --- */
+  .a2card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    background: var(--card-bg);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    max-width: 100%;
+    backdrop-filter: blur(10px);
+  }
+  .a2card + .a2card, .a2col > .a2card { margin-top: 0.75rem; }
+  .a2col { display: flex; flex-direction: column; gap: 0.5rem; }
+  .a2row { display: flex; flex-direction: row; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  .a2row.between { justify-content: space-between; }
+  .a2text { margin: 0; line-height: 1.5; color: var(--text-primary); }
+  .a2text.a2-h1 { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+  .a2text.a2-h2 { font-family: 'Cinzel', serif; font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+  .a2text.a2-h3 { font-family: 'Cinzel', serif; font-size: 1.15rem; font-weight: 600; }
+  .a2text.a2-h4 { font-size: 1rem; font-weight: 600; }
+  .a2text.a2-caption { font-size: 0.85rem; color: var(--text-secondary); }
+  .a2divider { border: none; border-top: 1px solid var(--border); margin: 0.5rem 0; width: 100%; }
+  .a2img { max-width: 100%; border-radius: 10px; display: block; border: 1px solid var(--border); }
+  .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-size: 1.25rem; line-height: 1; vertical-align: middle; color: var(--accent); }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+</style>
+</head>
+<body class="theme-titan">
+
+<!-- Canvas Particle Backdrop -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Registration Onboarding Modal -->
+<div class="reg-modal-overlay" id="reg-modal">
+  <div class="reg-modal-card">
+    <h2>⚔️ Welcome to Realm Weaver</h2>
+    <p>Create your hero profile and select your Clan allegiance to enter the Shattered Peaks.</p>
+
+    <div class="reg-input-group">
+      <label for="reg-name">Hero Character Name</label>
+      <input type="text" id="reg-name" placeholder="Enter hero name (e.g. Kaelen, Thorin, Aria)..." value="" autofocus>
+    </div>
+
+    <div class="reg-input-group">
+      <label>Select Clan Allegiance</label>
+      <div class="clan-selection-grid">
+        <div class="clan-card selected" data-clan="titan">
+          <div class="clan-card-head">🛡️ Titan Clan</div>
+          <p>Earth & Iron masters. Amethyst shields.</p>
+        </div>
+        <div class="clan-card" data-clan="dragon">
+          <div class="clan-card-head">🐉 Dragon Clan</div>
+          <p>Fire & Fury wielders. Crimson embers.</p>
+        </div>
+        <div class="clan-card" data-clan="phoenix">
+          <div class="clan-card-head">🔥 Phoenix Clan</div>
+          <p>Sunlight & Rebirth. Golden solar flames.</p>
+        </div>
+        <div class="clan-card" data-clan="shadow">
+          <div class="clan-card-head">👻 Shadow Clan</div>
+          <p>Stealth & Illusion. Cyber Emerald wisps.</p>
+        </div>
+      </div>
+    </div>
+
+    <button class="start-quest-btn" id="submit-reg-btn">⚔️ Begin Realm Quest</button>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="header-brand">
+    <div>
+      <h1>Realm Weaver</h1>
+      <div class="subtitle">Warlords of the Shattered Peaks</div>
+    </div>
+  </div>
+  
+  <div class="header-actions">
+    <button class="action-btn" id="edit-hero-btn" title="Hero Profile">
+      <span>👤 Profile</span>
+    </button>
+
+    <button class="action-btn" id="open-map-btn" title="Realm Map">
+      <span>🗺️ Map</span>
+    </button>
+    
+    <button class="action-btn" id="toggle-guided-btn" title="Guided Help">
+      <span>💡 Guide</span>
+    </button>
+
+    <div class="theme-selector" title="Switch Clan Theme">
+      <button class="theme-btn active" data-theme="titan" title="Titan Clan (Amethyst)">🛡️</button>
+      <button class="theme-btn" data-theme="dragon" title="Dragon Clan (Crimson Fire)">🐉</button>
+      <button class="theme-btn" data-theme="phoenix" title="Phoenix Clan (Golden Sun)">🔥</button>
+      <button class="theme-btn" data-theme="shadow" title="Shadow Clan (Cyber Emerald)">👻</button>
+    </div>
+  </div>
+</header>
+
+<!-- Guided Gameplay Assistant Popover -->
+<div class="guided-popover" id="guided-popover">
+  <div class="guided-title">💡 Guided Gameplay Assistant</div>
+  <div class="guided-card" onclick="triggerGuidedPrompt('Tell me the history and emblems of the 4 Clan alliances')">
+    <h4>📜 Chapter 1: Clan Alliances</h4>
+    <p>Discover the lore, emblems, and secrets of Dragon, Titan, Phoenix, and Shadow clans.</p>
+  </div>
+  <div class="guided-card" onclick="triggerGuidedPrompt('How can my hero gather Spirit Stones from monsters?')">
+    <h4>💎 Chapter 2: Spirit Stone Hunt</h4>
+    <p>Learn how to battle monsters and gather all 10 Spirit Stones across the Peaks.</p>
+  </div>
+  <div class="guided-card" onclick="triggerGuidedPrompt('Show me the legendary elemental dragons')">
+    <h4>🐉 Chapter 3: Elemental Dragons</h4>
+    <p>Examine the Fire Dragon, Water Dragon, and Primordial Dragon powers.</p>
+  </div>
+  <div class="guided-card" onclick="triggerGuidedPrompt('Show my current gear, stats, and active quests')">
+    <h4>⚔️ Chapter 4: Hero Progression</h4>
+    <p>Review equipped weapons, level progression, and remaining quests.</p>
+  </div>
+</div>
+
+<!-- World Map & Accomplished Missions Modal -->
+<div class="modal-overlay" id="map-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>🗺️ Shattered Peaks World Map & Missions</h2>
+      <button class="close-btn" id="close-map-btn">&times;</button>
+    </div>
+    
+    <div>
+      <h3 style="font-family:'Cinzel',serif; font-size:1.05rem; color:var(--accent); margin:0 0 0.5rem;">Map Locations & Realms</h3>
+      <div class="map-grid">
+        <div class="map-card">
+          <div class="loc-title">🌋 Volcanic Rift</div>
+          <div class="loc-status status-active">Active Quest ⚔️</div>
+          <div style="font-size:0.75rem; opacity:0.8;">Dragon Clan Stronghold</div>
+        </div>
+        <div class="map-card">
+          <div class="loc-title">🛡️ Amethyst Spire</div>
+          <div class="loc-status status-active">Active Quest ⚔️</div>
+          <div style="font-size:0.75rem; opacity:0.8;">Titan Clan Citadel</div>
+        </div>
+        <div class="map-card">
+          <div class="loc-title">🌅 Sunken Temple</div>
+          <div class="loc-status status-locked">Discovered 📜</div>
+          <div style="font-size:0.75rem; opacity:0.8;">Phoenix Clan Shrine</div>
+        </div>
+        <div class="map-card">
+          <div class="loc-title">🌲 Shadow Glen</div>
+          <div class="loc-status status-locked">Discovered 🗺️</div>
+          <div style="font-size:0.75rem; opacity:0.8;">Shadow Clan Woods</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="font-family:'Cinzel',serif; font-size:1.05rem; color:var(--accent); margin:0.5rem 0 0.5rem;">Accomplished Missions</h3>
+      <div class="missions-list" id="accomplished-missions-list">
+        <div class="mission-item">
+          <span>✅ Registered Hero Profile & Sworn Clan Allegiance</span>
+          <span style="font-size:0.75rem; color:var(--accent);">Completed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dynamic Player Status Bar Widget -->
+<div class="player-status-bar">
+  <div class="status-group">
+    <div class="status-item">
+      <span>⚔️ Hero: <strong id="player-name-label">Unregistered</strong></span>
+      <span style="color: var(--accent); font-weight:700;" id="player-lvl-label">(Lvl 1)</span>
+    </div>
+    <div class="status-item">
+      <span>HP</span>
+      <div class="meter-bar"><div class="meter-fill-hp" id="hp-bar-fill" style="width: 100%;"></div></div>
+      <span id="hp-val-label">100/100</span>
+    </div>
+    <div class="status-item">
+      <span>MP</span>
+      <div class="meter-bar"><div class="meter-fill-mp" id="mp-bar-fill" style="width: 100%;"></div></div>
+      <span id="mp-val-label">50/50</span>
+    </div>
+  </div>
+  <div class="status-group">
+    <div class="status-item"><span>💎 Spirit Stones: <strong id="stones-val-label">0 / 10</strong></span></div>
+    <div class="status-item"><span>🛡️ Clan: <strong id="active-clan-label">Titan</strong></span></div>
+    <div class="quest-badge" id="active-quest-label">📜 Quest: Clan Initiation</div>
+  </div>
+</div>
+
+<!-- Dialogue Log -->
+<div id="log"></div>
+
+<!-- Contextual Guided Action Bar -->
+<div class="actions-wrapper">
+  <div class="quick-actions-title">
+    <span>💡 Dynamic Guided Quest Steps</span>
+  </div>
+  <div class="prompts-container" id="prompts-container">
+    <!-- Dynamic Guided Chips Rendered Here -->
+  </div>
+</div>
+
+<!-- Form Bar -->
+<form id="form">
+  <input id="input" placeholder="Ask something about the Realm..." autocomplete="off">
+  <button class="send-btn" type="submit">
+    <span>Send</span>
+    <span class="material-symbols-outlined" style="font-size: 1.1rem; color:#fff;">send</span>
+  </button>
+</form>
+
+<script>
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const promptsContainer = document.getElementById("prompts-container");
+
+// --- Map & Registration Modals ---
+const regModal = document.getElementById("reg-modal");
+const regNameInput = document.getElementById("reg-name");
+const submitRegBtn = document.getElementById("submit-reg-btn");
+const editHeroBtn = document.getElementById("edit-hero-btn");
+
+const mapModal = document.getElementById("map-modal");
+const openMapBtn = document.getElementById("open-map-btn");
+const closeMapBtn = document.getElementById("close-map-btn");
+const guidedPopover = document.getElementById("guided-popover");
+const toggleGuidedBtn = document.getElementById("toggle-guided-btn");
+
+// --- Reactive Dynamic Player State & Registration ---
+let selectedRegClan = "titan";
+let currentQuestStage = 0;
+let isInitializingGreeting = false;
+
+const playerState = {
+  name: "",
+  level: 1,
+  hp: 100,
+  maxHp: 100,
+  mp: 50,
+  maxMp: 50,
+  spiritStones: 0,
+  maxSpiritStones: 10,
+  clan: "Titan",
+  quest: "Clan Initiation"
+};
+
+const accomplishedMissions = [
+  "Registered Hero Profile & Sworn Clan Allegiance"
+];
+
+// Contextual Guided Prompt Sets Aligned with Game Progression Rules
+function getGuidedPromptsForStage(stage) {
+  if (stage === 0) {
+    // Newly registered player -> Choose direction / region to hunt wild monsters & harvest stones
+    return [
+      `🧭 Explore West towards Volcanic Rift`,
+      `🧭 Explore North towards Amethyst Spire`,
+      `🧭 Explore East towards Sunken Temple`,
+      `📜 Learn secrets of ${playerState.clan} Clan`
+    ];
+  } else if (stage === 1) {
+    // Gathering stones (1 - 9 Spirit Stones)
+    return [
+      `💎 Explore and harvest Spirit Stones (${playerState.spiritStones}/10)`,
+      `⚔️ Battle wild monster with ${playerState.clan} magic`,
+      `❤️ Drink Mana Elixir to restore HP & MP`,
+      `📜 Show my Warlord Profile`
+    ];
+  } else {
+    // Advanced hero progression (10+ Spirit Stones -> Unlocks & Level Up!)
+    return [
+      `✨ Unlock Spell Fireball (10 Spirit Stones)`,
+      `🏆 Claim Quest Reward & Level Up Hero`,
+      `🌅 Journey to Sunken Temple Shrine`,
+      `🐉 Summon Primordial Dragon Guardian`
+    ];
+  }
+}
+
+function renderGuidedActionChips() {
+  promptsContainer.innerHTML = "";
+  const prompts = getGuidedPromptsForStage(currentQuestStage);
+  prompts.forEach(pText => {
+    const btn = document.createElement("button");
+    btn.className = "prompt-chip";
+    btn.type = "button";
+    btn.textContent = pText;
+    btn.addEventListener("click", () => {
+      playClickSound(520);
+      const cleanText = pText.replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}]\s*/u, "");
+      input.value = cleanText;
+      form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+    });
+    promptsContainer.appendChild(btn);
+  });
+}
+
+// Dynamic Session Identifier for A2A isolation per user tab
+const userSessionId = "session_" + Math.random().toString(36).substring(2, 9);
+
+// Clan Registration Cards Selection Logic
+document.querySelectorAll(".clan-card").forEach(card => {
+  card.addEventListener("click", () => {
+    playClickSound(550);
+    document.querySelectorAll(".clan-card").forEach(c => c.classList.remove("selected"));
+    card.classList.add("selected");
+    selectedRegClan = card.dataset.clan;
+  });
+});
+
+editHeroBtn.addEventListener("click", () => {
+  playClickSound(600);
+  regNameInput.value = playerState.name;
+  regModal.style.display = "flex";
+});
+
+submitRegBtn.addEventListener("click", () => {
+  const enteredName = regNameInput.value.trim() || "Kaelen";
+  playerState.name = enteredName;
+  playerState.spiritStones = 0; // Strictly ensure 0 spirit stones on registration
+  currentQuestStage = 0;
+  
+  const cfg = themeConfig[selectedRegClan] || themeConfig.titan;
+  playerState.clan = cfg.label;
+  
+  // Apply Clan Theme
+  applyTheme(selectedRegClan);
+
+  regModal.style.display = "none";
+  renderPlayerState();
+  renderGuidedActionChips();
+  playClickSound(800);
+  showToast(`🛡️ Welcome ${playerState.name} of the ${playerState.clan} Clan!`);
+
+  // Automatically start chat introduction if log is empty
+  if (log.children.length === 0) {
+    isInitializingGreeting = true;
+    const greeting = `Hail Realm Weaver! Register me as ${playerState.name} in the ${playerState.clan} Clan. I am ready to begin my quest!`;
+    bubble("user").textContent = greeting;
+    sendChatMessage(greeting);
+  }
+});
+
+openMapBtn.addEventListener("click", () => {
+  playClickSound(600);
+  mapModal.classList.add("open");
+});
+closeMapBtn.addEventListener("click", () => {
+  mapModal.classList.remove("open");
+});
+mapModal.addEventListener("click", (e) => {
+  if (e.target === mapModal) mapModal.classList.remove("open");
+});
+
+toggleGuidedBtn.addEventListener("click", () => {
+  playClickSound(650);
+  guidedPopover.classList.toggle("open");
+});
+
+function triggerGuidedPrompt(text) {
+  guidedPopover.classList.remove("open");
+  playClickSound(520);
+  input.value = text;
+  form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+}
+
+function renderMissions() {
+  const list = document.getElementById("accomplished-missions-list");
+  list.innerHTML = "";
+  accomplishedMissions.forEach(m => {
+    const item = document.createElement("div");
+    item.className = "mission-item";
+    item.innerHTML = `<span>✅ ${m}</span><span style="font-size:0.75rem; color:var(--accent);">Completed</span>`;
+    list.appendChild(item);
+  });
+}
+
+function renderPlayerState() {
+  document.getElementById("player-name-label").textContent = playerState.name || "Unregistered";
+  document.getElementById("player-lvl-label").textContent = `(Lvl ${playerState.level})`;
+  
+  const hpPct = Math.min(100, Math.max(0, (playerState.hp / playerState.maxHp) * 100));
+  document.getElementById("hp-bar-fill").style.width = `${hpPct}%`;
+  document.getElementById("hp-val-label").textContent = `${playerState.hp}/${playerState.maxHp}`;
+
+  const mpPct = Math.min(100, Math.max(0, (playerState.mp / playerState.maxMp) * 100));
+  document.getElementById("mp-bar-fill").style.width = `${mpPct}%`;
+  document.getElementById("mp-val-label").textContent = `${playerState.mp}/${playerState.maxMp}`;
+
+  document.getElementById("stones-val-label").textContent = `${playerState.spiritStones} / ${playerState.maxSpiritStones}`;
+  document.getElementById("active-clan-label").textContent = playerState.clan;
+  document.getElementById("active-quest-label").textContent = `📜 Quest: ${playerState.quest}`;
+  
+  renderMissions();
+}
+
+function showToast(msg) {
+  const container = document.getElementById("toast-container");
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = msg;
+  container.appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = "0";
+    t.style.transition = "opacity 0.3s ease";
+    setTimeout(() => t.remove(), 300);
+  }, 3000);
+}
+
+function addAccomplishedMission(title) {
+  if (!accomplishedMissions.includes(title)) {
+    accomplishedMissions.push(title);
+    renderMissions();
+    showToast(`🏆 Mission Accomplished: ${title}`);
+  }
+}
+
+// --- Dynamic State Extractor & Guided Quest Progression ---
+function updateStateFromInteraction(userText, agentText) {
+  if (isInitializingGreeting) {
+    isInitializingGreeting = false;
+    currentQuestStage = 0;
+    renderPlayerState();
+    renderGuidedActionChips();
+    return;
+  }
+
+  // 1. Extract Spirit Stones from Agent Output
+  const stoneMatch = agentText.match(/(?:Spirit Stones|Balance|Total Spirit Stones)(?:\s*Balance)?:?\s*\*?\*?(\d+)\*?\*?/i) || 
+                     agentText.match(/(\d+)\s*Spirit Stones/i) ||
+                     agentText.match(/\+(\d+)\s*Spirit Stones/i);
+  if (stoneMatch) {
+    const val = parseInt(stoneMatch[1], 10);
+    if (!isNaN(val)) {
+      playerState.spiritStones = val;
+      if (val > 0) {
+        addAccomplishedMission(`Gathered ${val} Spirit Stones`);
+      }
+    }
+  }
+
+  // 2. Extract Level from Agent Output
+  const levelMatch = agentText.match(/Level:?\s*\*?\*?(\d+)\*?\*?/i) || agentText.match(/Level (\d+)/i);
+  if (levelMatch) {
+    const val = parseInt(levelMatch[1], 10);
+    if (!isNaN(val) && val > 0) {
+      playerState.level = val;
+    }
+  }
+
+  // 3. Extract Clan from Agent Output
+  const clanMatch = agentText.match(/Clan:?\s*\*?\*?(Titan|Dragon|Phoenix|Shadow)\*?\*?/i);
+  if (clanMatch) {
+    playerState.clan = clanMatch[1];
+  }
+
+  // 4. Update Quest Stage based on actual Spirit Stones count
+  if (playerState.spiritStones === 0) {
+    currentQuestStage = 0; // Stage 0: Initial Exploration
+    playerState.quest = "Explore Shattered Peaks";
+  } else if (playerState.spiritStones < 10) {
+    currentQuestStage = 1; // Stage 1: Harvesting & Battling
+    playerState.quest = `Collect Spirit Stones (${playerState.spiritStones}/10)`;
+  } else {
+    currentQuestStage = 2; // Stage 2: Ready for Sequential Unlocks & Level Up!
+    playerState.quest = "Sequential Unlock: Step 1 - Spell";
+  }
+
+  renderPlayerState();
+  renderGuidedActionChips();
+}
+
+// --- Web Audio Micro-Feedback ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playClickSound(freq = 440) {
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.08);
+  } catch (e) {}
+}
+
+// --- Interactive Clan Theme Selector ---
+let currentAgentAvatar = "🛡️";
+let currentUserAvatar = "⚔️";
+let currentParticleRgb = "139, 92, 246";
+
+const themeConfig = {
+  titan: { avatar: "🛡️", label: "Titan", rgb: "139, 92, 246" },
+  dragon: { avatar: "🐉", label: "Dragon", rgb: "239, 68, 68" },
+  phoenix: { avatar: "🔥", label: "Phoenix", rgb: "245, 158, 11" },
+  shadow: { avatar: "👻", label: "Shadow", rgb: "16, 185, 129" }
+};
+
+function applyTheme(theme) {
+  document.querySelectorAll(".theme-btn").forEach(b => b.classList.remove("active"));
+  const activeBtn = document.querySelector(`.theme-btn[data-theme="${theme}"]`);
+  if (activeBtn) activeBtn.classList.add("active");
+  
+  document.body.className = "theme-" + theme;
+  const cfg = themeConfig[theme] || themeConfig.titan;
+  currentAgentAvatar = cfg.avatar;
+  playerState.clan = cfg.label;
+  currentParticleRgb = cfg.rgb;
+  renderPlayerState();
+}
+
+document.querySelectorAll(".theme-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    playClickSound(600);
+    const theme = btn.dataset.theme;
+    selectedRegClan = theme;
+    applyTheme(theme);
+    renderGuidedActionChips();
+    showToast(`🛡️ Switched allegiance to ${playerState.clan} Clan!`);
+  });
+});
+
+renderGuidedActionChips();
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+// --- Enhanced Dialogue Item Builder ---
+function bubble(who) {
+  const wrapper = el("div", "msg-wrapper " + who);
+  const avatar = el("div", "avatar", who === "user" ? currentUserAvatar : currentAgentAvatar);
+  
+  const container = el("div", "bubble-container");
+  const senderRow = el("div", "sender-row");
+  const heroDisplayName = playerState.name ? `${playerState.name} (${playerState.clan})` : "Hero Player";
+  const name = el("div", "sender-name", who === "user" ? heroDisplayName : "Realm Weaver");
+  senderRow.appendChild(name);
+
+  if (who === "agent") {
+    const copyBtn = el("button", "copy-btn", "📋");
+    copyBtn.title = "Copy text";
+    copyBtn.addEventListener("click", () => {
+      const textToCopy = b.textContent;
+      navigator.clipboard.writeText(textToCopy);
+      copyBtn.textContent = "✓";
+      setTimeout(() => { copyBtn.textContent = "📋"; }, 1500);
+    });
+    senderRow.appendChild(copyBtn);
+  }
+
+  const b = el("div", "bubble");
+
+  container.appendChild(senderRow);
+  container.appendChild(b);
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(container);
+
+  log.appendChild(wrapper);
+  log.scrollTop = log.scrollHeight;
+  return b;
+}
+
+function showLoadingState() {
+  const wrapper = el("div", "msg-wrapper agent");
+  const avatar = el("div", "avatar", currentAgentAvatar);
+  const container = el("div", "bubble-container");
+  
+  const loading = el("div", "loading-bubble");
+  const statusText = el("span", null, "Consulting the ancient scrolls");
+  const pulse = el("div", "dot-pulse");
+  pulse.appendChild(el("span")); pulse.appendChild(el("span")); pulse.appendChild(el("span"));
+
+  loading.appendChild(statusText);
+  loading.appendChild(pulse);
+  container.appendChild(loading);
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(container);
+
+  log.appendChild(wrapper);
+  log.scrollTop = log.scrollHeight;
+  return wrapper;
+}
+
+/* ----------------------------------------------------------------------------
+ * A2UI mini-renderer (v0.8 Basic Catalog subset).
+ * -------------------------------------------------------------------------- */
+function boundStr(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v.literalString === "string") return v.literalString;
+  return "";
+}
+
+function childIds(props) {
+  const ids = [];
+  if (props && typeof props.child === "string") ids.push(props.child);
+  const ch = props && props.children;
+  if (ch && Array.isArray(ch.explicitList)) for (const c of ch.explicitList) if (typeof c === "string") ids.push(c);
+  return ids;
+}
+
+function iconName(n) { return String(n || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\s+/g, "_").toLowerCase(); }
+
+function buildNode(id, comps, seen) {
+  if (!id || seen.has(id)) return null;
+  seen.add(id);
+  const spec = comps[id];
+  if (!spec || typeof spec !== "object") return null;
+  const type = Object.keys(spec)[0];
+  const props = spec[type] || {};
+  const kids = () => childIds(props).map(cid => buildNode(cid, comps, seen)).filter(Boolean);
+
+  switch (type) {
+    case "Card": {
+      const d = el("div", "a2card"); kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Column":
+    case "List": {
+      const horizontal = type === "List" && props.direction === "horizontal";
+      const d = el("div", horizontal ? "a2row" : "a2col"); kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Row": {
+      const d = el("div", "a2row" + (props.distribution === "spaceBetween" ? " between" : ""));
+      kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Text": {
+      const t = el("div", "a2text");
+      const hint = String(props.usageHint || "body").toLowerCase();
+      if (["h1", "h2", "h3", "h4", "h5", "h6"].includes(hint)) t.classList.add("a2-" + hint);
+      else if (hint === "caption") t.classList.add("a2-caption");
+      t.textContent = boundStr(props.text);
+      return t;
+    }
+    case "Divider":
+      return el("hr", "a2divider");
+    case "Image": {
+      const src = boundStr(props.url || props.src);
+      if (!/^https?:\/\//i.test(src)) return null;
+      const img = el("img", "a2img"); img.src = src; img.alt = boundStr(props.alt) || ""; return img;
+    }
+    case "Icon": {
+      const s = el("span", "material-symbols-outlined"); s.textContent = iconName(boundStr(props.name) || props.name); return s;
+    }
+    default:
+      return null;
+  }
+}
+
+function renderSurface(messages, container) {
+  const comps = {};
+  const roots = [];
+  for (const m of messages) {
+    if (m.beginRendering && typeof m.beginRendering.root === "string") roots.push(m.beginRendering.root);
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.id && c.component) comps[c.id] = c.component;
+  }
+  let rootIds = roots.filter(r => comps[r]);
+  if (rootIds.length === 0) {
+    const referenced = new Set();
+    for (const id in comps) { const spec = comps[id]; childIds(spec[Object.keys(spec)[0]] || {}).forEach(c => referenced.add(c)); }
+    rootIds = Object.keys(comps).filter(id => !referenced.has(id));
+  }
+  let drew = false;
+  for (const rid of rootIds) { const node = buildNode(rid, comps, new Set()); if (node) { container.appendChild(node); drew = true; } }
+  return drew;
+}
+
+function flattenText(messages) {
+  const out = [];
+  for (const m of messages) {
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.component && c.component.Text) out.push(boundStr(c.component.Text.text));
+  }
+  return out.join("\n").trim();
+}
+
+function renderReply(b, parts) {
+  b.textContent = "";
+  const texts = parts.filter(p => p && (p.kind === "text" || (!p.kind && p.text))).map(p => p.text || "");
+  const a2ui = parts.filter(p => p && p.kind === "a2ui" && p.data).map(p => p.data);
+
+  const textStr = texts.join("\n").trim();
+  if (textStr) b.appendChild(el("div", null, textStr));
+
+  if (a2ui.length) {
+    b.classList.add("rich");
+    if (!renderSurface(a2ui, b)) b.appendChild(el("div", null, flattenText(a2ui) || "(no card content)"));
+  }
+  if (!b.childNodes.length) b.textContent = "(no response)";
+  log.scrollTop = log.scrollHeight;
+
+  // Trigger dynamic state update & mission progress!
+  updateStateFromInteraction("", textStr);
+}
+
+async function sendChatMessage(text) {
+  const loadingWrapper = showLoadingState();
+  const activeUserId = (playerState.name || "hero").toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + userSessionId;
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, user_id: activeUserId })
+    });
+    const raw = await res.text();
+    loadingWrapper.remove();
+    
+    let data;
+    try { data = JSON.parse(raw); }
+    catch { throw new Error(`Server returned non-JSON (HTTP ${res.status}). ${raw.slice(0, 300)}`); }
+    
+    const b = bubble("agent");
+    renderReply(b, data.parts || []);
+  } catch (e) {
+    loadingWrapper.remove();
+    const b = bubble("agent");
+    b.textContent = "Error: " + e.message;
+  }
+}
+
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+
+  // If user hasn't registered yet, prompt modal first
+  if (!playerState.name) {
+    regModal.style.display = "flex";
+    return;
+  }
+
+  playClickSound(800);
+  bubble("user").textContent = text;
+  input.value = "";
+  await sendChatMessage(text);
+});
+
+// --- HTML5 Canvas Elemental Particles Backdrop ---
+const canvas = document.getElementById("bg-canvas");
+const ctx = canvas.getContext("2d");
+let particles = [];
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * canvas.width;
+    this.y = canvas.height + Math.random() * 50;
+    this.size = Math.random() * 2.5 + 0.5;
+    this.speedY = Math.random() * 1.2 + 0.3;
+    this.speedX = (Math.random() - 0.5) * 0.5;
+    this.alpha = Math.random() * 0.7 + 0.2;
+  }
+  update() {
+    this.y -= this.speedY;
+    this.x += this.speedX;
+    this.alpha -= 0.002;
+    if (this.y < 0 || this.alpha <= 0) this.reset();
+  }
+  draw() {
+    ctx.fillStyle = `rgba(${currentParticleRgb}, ${this.alpha})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+for (let i = 0; i < 45; i++) particles.push(new Particle());
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+</script>
+</body>
+</html>
