@@ -53,6 +53,29 @@
 
 ---
 
+## 🎬 Generated Media & Assets (`assets/`)
+
+All AI-generated images (`gemini-3.1-flash-lite-image`), videos (`gemini-omni-flash-preview`), and audio tracks are committed directly in the `assets/` directory:
+
+### 🖼️ AI Artwork
+* **Spirit Stone Monster Kill**: `assets/warlord_solariss_hand_holding_a_glowing_spirit_stone_over_the_slayed_mountain_frost_drake.png`
+* **Dragonblood Greatsword**: `assets/dragonblood_greatsword.png`
+* **Clan Dragon Emblem**: `assets/clan_dragon_emblem.png`
+* **Celestial Lotus**: `assets/celestial_lotus.png`
+
+### 📹 AI Clan Theme & Gameplay Videos (Omni Model 60fps)
+* **Phoenix Clan Demo**: `assets/phoenix_clan_warlord_solaris_demo.mp4`
+* **Titan Clan Sanctuary**: `assets/titan_clan_sanctuary.mp4`
+* **Dragon Clan Volcanic Rift**: `assets/dragon_clan_volcanic_rift.mp4`
+* **Phoenix Clan Solar Spire**: `assets/phoenix_clan_solar_spire.mp4`
+* **Shadow Clan Eclipse Citadel**: `assets/shadow_clan_eclipse_citadel.mp4`
+* **Dragonblood Greatsword Item**: `assets/dragonblood_greatsword.mp4`
+
+### 🎵 Lo-Fi Background Audio
+* **Phoenix Clan Upbeat Lo-Fi Beat**: `assets/phoenix_clan_lofi_theme.wav`
+
+---
+
 ## 📁 Directory Structure
 
 ```
@@ -65,6 +88,7 @@ realm-weaver/
 │   ├── main.py                 # FastAPI A2A proxy server
 │   └── static/
 │       └── index.html          # Call of Duty dark mode UI, A2UI renderer, dynamic HUD
+├── assets/                     # AI-generated artwork PNGs, Omni MP4 videos, WAV audio
 ├── agents-cli-manifest.yaml    # ADK deployment manifest
 ├── pyproject.toml              # Dependencies and project metadata
 ├── seed_firestore.py           # Firestore database seed script
