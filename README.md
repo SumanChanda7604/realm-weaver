@@ -4,6 +4,20 @@
 
 ---
 
+## 🎥 Agent Gameplay & AI Video Demo
+
+![Realm Weaver Agent Gameplay Demo](assets/phoenix_clan_demo_preview.gif)
+
+<p align="center">
+  <video src="assets/phoenix_clan_warlord_solaris_demo.mp4" width="100%" controls autoplay loop muted></video>
+</p>
+
+* 🎬 **Full HD 60fps MP4 Demo Video**: [`assets/phoenix_clan_warlord_solaris_demo.mp4`](assets/phoenix_clan_warlord_solaris_demo.mp4)
+* 🖼️ **Monster Kill & Spirit Stone Artwork**: [`assets/warlord_solariss_hand_holding_a_glowing_spirit_stone_over_the_slayed_mountain_frost_drake.png`](assets/warlord_solariss_hand_holding_a_glowing_spirit_stone_over_the_slayed_mountain_frost_drake.png)
+* 🎵 **Phoenix Clan Upbeat Lo-Fi Audio Track**: [`assets/phoenix_clan_lofi_theme.wav`](assets/phoenix_clan_lofi_theme.wav)
+
+---
+
 ## 🌟 Implemented Agent Features & Architecture
 
 ### 1. 🤖 Core Agent & AI Models (`app/agent.py`)
